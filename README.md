@@ -5,4 +5,4 @@ ru -> en
 en -> ru
 
 
-connecting to https://wooordhunt.ru
+connects to https://wooordhunt.ru

@@ -6,7 +6,7 @@ from base64 import b64decode, b64encode
 import os
 def clear_console():
     if os.name == 'posix': # linux, macos, etc
-        os.system('clear') 
+        os.system('clear')
     else:
         os.system('cls')	# windows
 
@@ -45,7 +45,7 @@ def parse_similar_words(page):
     return res
 
 
-def translate(word, get_func=requests.get):
+def translate(word, get_func=requests.get, verbose=False):
     url_base = 'https://wooordhunt.ru/word/'
     err_not_found = 'word_not_found'
 
@@ -58,20 +58,22 @@ def translate(word, get_func=requests.get):
     page = get_func(url_base+word).text
 
     if err_not_found in page:
-        result = f'error: cant translate the word `{word}`\n'
+        result = f'error: cant translate the word `{word}`'
     else:
-        result = parse_translation(page).strip() + '\n'
+        result = parse_translation(page).strip() 
 
-    similar_words = parse_similar_words(page)
-    variants = parse_possible_variants(page)
-    if similar_words:
+    if verbose:
         result += '\n'
-        result += 'similar: '
-        result += f'`{"`, `".join(similar_words)}`?'
-    if variants:
-        result += '\n'
-        result += 'possible variants: '
-        result += f'`{"`, `".join(variants)}`?'
+        similar_words = parse_similar_words(page)
+        variants = parse_possible_variants(page)
+        if similar_words:
+            result += '\n'
+            result += 'similar: '
+            result += f'`{"`, `".join(similar_words)}`?'
+        if variants:
+            result += '\n'
+            result += 'possible variants: '
+            result += f'`{"`, `".join(variants)}`?'
 
     return result
 
@@ -99,7 +101,7 @@ if __name__ == '__main__':
         interactive()
 
     elif len(args) == 1:
-        print(translate(args[0]))
+        print(translate(args[0], verbose=True))
 
     elif len(args) > 1:
         with requests.Session() as session:

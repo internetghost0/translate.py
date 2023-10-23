@@ -4,12 +4,54 @@ import re
 import sys
 from base64 import b64decode, b64encode
 import os
-def clear_console():
-    if os.name == 'posix': # linux, macos, etc
-        os.system('clear')
-    else:
-        os.system('cls')	# windows
 
+def main(args):
+
+    # REPL mode
+    if len(args) == 0:
+        interactive()
+
+    elif len(args) == 1:
+        print(translate(args[0], verbose=True))
+
+    elif len(args) >= 2:
+        with requests.Session() as session:
+            for word in args:
+                transl_word = translate(word, session.get)
+                print(word, '=', transl_word)
+
+
+def translate(word, get_func=requests.get, verbose=False):
+    url_base = 'https://wooordhunt.ru/word/'
+    err_not_found = 'word_not_found'
+
+    if type(word) is not str:
+        raise Exception('translate(): expected a str, but got ' + str(type(word)))
+
+    word = word.lower().strip('\t\n\\-_-/=+')
+    if word == "": return None
+
+    page = get_func(url_base+word).text
+
+    if err_not_found in page:
+        result = f'error: cannot translate the word `{word}`'
+    else:
+        result = parse_translation(page).strip()
+
+    if verbose:
+        result += '\n'
+        similar_words = parse_similar_words(page)
+        variants = parse_possible_variants(page)
+        if similar_words:
+            result += '\n'
+            result += 'similar: '
+            result += f'`{"`, `".join(similar_words)}`?'
+        if variants:
+            result += '\n'
+            result += 'possible variants: '
+            result += f'`{"`, `".join(variants)}`?'
+
+    return result
 
 def parse_translation(page):
     pattern = r'<div class="t_inline_en">(.*?)</div>' # en -> ru
@@ -24,7 +66,7 @@ def parse_translation(page):
         if matchObj:
             return matchObj.group(1)
         else:
-            raise Exception('cannot parse a page')
+            raise Exception('cannot parse the page, bug!')
 
 def parse_possible_variants(page):
     pattern = 'class="possible_variant">(.*?)</a'
@@ -44,39 +86,11 @@ def parse_similar_words(page):
         tmp = tmp[e+3:]
     return res
 
-
-def translate(word, get_func=requests.get, verbose=False):
-    url_base = 'https://wooordhunt.ru/word/'
-    err_not_found = 'word_not_found'
-
-    if type(word) is not str:
-        raise Exception('translate(): expected str, but got ' + str(type(word)))
-
-    word = word.lower().strip('\t\n\\-_-/=+')
-    if word == "": return None
-
-    page = get_func(url_base+word).text
-
-    if err_not_found in page:
-        result = f'error: cant translate the word `{word}`'
+def clear_console():
+    if os.name == 'posix': # linux, macos, etc
+        os.system('clear')
     else:
-        result = parse_translation(page).strip() 
-
-    if verbose:
-        result += '\n'
-        similar_words = parse_similar_words(page)
-        variants = parse_possible_variants(page)
-        if similar_words:
-            result += '\n'
-            result += 'similar: '
-            result += f'`{"`, `".join(similar_words)}`?'
-        if variants:
-            result += '\n'
-            result += 'possible variants: '
-            result += f'`{"`, `".join(variants)}`?'
-
-    return result
-
+        os.system('cls')	# windows
 
 def interactive():
     print('---- Interactive mode ----')
@@ -94,17 +108,4 @@ def interactive():
             return KeyboardInterrupt
 
 if __name__ == '__main__':
-    args = sys.argv
-    program_name = args.pop(0)
-
-    if len(args) == 0:
-        interactive()
-
-    elif len(args) == 1:
-        print(translate(args[0], verbose=True))
-
-    elif len(args) > 1:
-        with requests.Session() as session:
-            for word in args:
-                transl_word = translate(word, session.get)
-                print(word, '=', transl_word)
+    main(sys.argv[1:])

@@ -5,6 +5,8 @@ import sys
 from base64 import b64decode, b64encode
 import os
 
+url_base = 'https://wooordhunt.ru/word/'
+
 def main(args):
 
     # REPL mode
@@ -22,7 +24,6 @@ def main(args):
 
 
 def translate(word, get_func=requests.get, verbose=False):
-    url_base = 'https://wooordhunt.ru/word/'
     err_not_found = 'word_not_found'
 
     if type(word) is not str:
@@ -101,7 +102,10 @@ def interactive():
                 if (inp in ['clear', 'c', 'cls']):
                     clear_console()
                 else:
-                    print('#', translate(inp, session.get), '\n')
+                    try:
+                        print('#', translate(inp, session.get), '\n')
+                    except Exception as e:
+                        print("### error:", e)
                 inp = input('> ')
         except (KeyboardInterrupt, EOFError):
             print()
